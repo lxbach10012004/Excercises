@@ -8,6 +8,8 @@ struct coordinate{
 	int val = 0;
 };
 
+vector< vector <coordinate> > graph;
+
 void input(){
 	cout << "Enter number of rows: ";
 	cin >> m;
@@ -37,9 +39,9 @@ vector< vector <coordinate> > generateGraph(){
 	return graph;
 }
 
-void printGraph(vector< vector <coordinate> > graph, bool gameOver){
+void printGraph(int gameOver){
 	
-	if(!gameOver){
+	if(gameOver == 0){
 		cout << "  ";
 		for(int j = 0; j < n; j++)
 			cout << j << " ";
@@ -55,7 +57,8 @@ void printGraph(vector< vector <coordinate> > graph, bool gameOver){
 		}
 	}
 	else{
-		cout << "YOU'RE DEAD!\n";
+		if(gameOver == 1)cout << "YOU'RE DEAD!\n";
+		else cout << "YOU WIN!\n";
 		cout << "  ";
 		for(int j = 0; j < n; j++)
 			cout << j << " ";
@@ -63,8 +66,10 @@ void printGraph(vector< vector <coordinate> > graph, bool gameOver){
 		for(int i = 0; i < m; i++){
 			cout << i << " ";
 			for(int j = 0; j < n; j++){
-				if(graph[i][j].val != -1)
-					cout << graph[i][j].val << " ";
+				if(graph[i][j].val != -1){
+					if(!graph[i][j].opened) cout << '-' << " ";
+					else cout << graph[i][j].val << " ";
+				}
 				else cout << "* ";
 			}
 			cout << endl;
@@ -73,27 +78,59 @@ void printGraph(vector< vector <coordinate> > graph, bool gameOver){
 	cout << endl;
 }
 
+int countMines(int x, int y){
+	int numMines = 0;
+	for(int i = x - 1; i <= x + 1; i++){
+		for(int j = y - 1; j <= y + 1; j++){
+			if(i >= 0 && i < m && j >= 0 && j < n && graph[i][j].val == -1)
+				numMines++;
+		}
+	}
+	graph[x][y].val = numMines;
+	graph[x][y].opened = 1;
+	return numMines;
+}
+
+void clearOut(int x, int y){
+	if(x < 0 || x >= m || y < 0 || y >=m || graph[x][y].opened)
+		return;
+	int mines = countMines(x, y);
+	if(mines != 0) return;
+	for(int i = x - 1; i <= x + 1; i++){
+		for(int j = y - 1; j <= y + 1; j++){
+			clearOut(i, j);
+		}
+	}
+	return;
+}
+
+bool win(){
+	int count = 0;
+	for(int i = 0; i < m; i++){
+		for(int j = 0; j < n; j++){
+			if(graph[i][j].opened){
+				count++;
+			}
+		}
+	}
+	if(count == m * n - k) return 1;
+	else return 0;
+}
+
 void playMinesweeper(){
 	input();
-	vector< vector <coordinate> > graph = generateGraph();
-	bool gameOver = 0;
-	while(!gameOver){
+	graph = generateGraph();
+	int gameOver = 0;
+	while(gameOver == 0){
 		check();
 		if(graph[x][y].val == -1){
 			gameOver = 1;
 		}
 		else{
-			int numMines = 0;
-			for(int i = x - 1; i <= x + 1; i++){
-				for(int j = y - 1; j <= y + 1; j++){
-					if(i >= 0 && i < m && j >= 0 && j < n && graph[i][j].val == -1)
-						numMines++;
-				}
-			}
-			graph[x][y].val = numMines;
-			graph[x][y].opened = 1;
+			clearOut(x, y);
+			if( win() ) gameOver = 2;
 		}
-		printGraph(graph, gameOver);
+		printGraph(gameOver);
 	}
 	
 }
